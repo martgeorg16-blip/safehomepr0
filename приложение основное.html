@@ -1,0 +1,2612 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeHome Pro - Умная система безопасности</title>
+    <style>
+        /* Все предыдущие стили остаются без изменений */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --secondary: #059669;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --gray: #6b7280;
+            --sidebar: #111827;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--secondary);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Auth Modal */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        }
+
+        .auth-modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .auth-content {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+
+        .auth-tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            min-height: 80vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--sidebar);
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-profile {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .nav-title {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: var(--light);
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-item:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Content Area */
+        .content-area {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 2rem;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Common Components */
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--dark);
+        }
+
+        /* Dashboard Tab */
+        .alert-panel {
+            border-left: 5px solid var(--secondary);
+        }
+
+        .alert-critical {
+            border-left-color: var(--danger);
+        }
+
+        .alert-warning {
+            border-left-color: var(--warning);
+        }
+
+        .alert-normal {
+            border-left-color: var(--secondary);
+        }
+
+        .alert-level {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .level-critical { background: var(--danger); }
+        .level-warning { background: var(--warning); }
+        .level-normal { background: var(--secondary); }
+
+        .sensors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .sensor-card {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 12px;
+            background: #f8fafc;
+            transition: all 0.3s;
+        }
+
+        .sensor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .sensor-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            color: var(--dark);
+        }
+
+        .sensor-status {
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--gray);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Notifications Tab */
+        .notifications-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            transition: background 0.3s;
+        }
+
+        .notification-item:hover {
+            background: #f9fafb;
+        }
+
+        .notification-item.unread {
+            background: #eff6ff;
+            border-left: 3px solid var(--primary);
+        }
+
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .notification-critical { background: #fee2e2; color: var(--danger); }
+        .notification-warning { background: #fef3c7; color: var(--warning); }
+        .notification-info { background: #dbeafe; color: var(--primary); }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-time {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        /* Smart Home Integration */
+        .integration-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .integration-card {
+            padding: 2rem;
+            text-align: center;
+            border-radius: 15px;
+            background: #f8fafc;
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .integration-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .integration-card.connected {
+            border-color: var(--secondary);
+            background: #f0fdf4;
+        }
+
+        .integration-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .integration-status {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-top: 1rem;
+            display: inline-block;
+        }
+
+        .status-connected { background: var(--secondary); color: white; }
+        .status-disconnected { background: var(--gray); color: white; }
+
+        /* Statistics Tab */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary), #1e40af);
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .stat-label {
+            opacity: 0.9;
+        }
+
+        .chart-container {
+            height: 300px;
+            margin: 1.5rem 0;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        /* Settings Tab */
+        .settings-section {
+            margin-bottom: 2rem;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        /* ML Models Tab */
+        .models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .model-card {
+            padding: 1.5rem;
+            border-radius: 12px;
+            background: #f8fafc;
+            border-left: 4px solid var(--primary);
+        }
+
+        .model-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .model-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* Emergency Contacts Tab */
+        .contacts-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .contact-card {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .contact-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .contact-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .contact-info {
+            flex: 1;
+        }
+
+        .contact-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Updates Tab */
+        .updates-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .update-card {
+            padding: 1.5rem;
+            border-radius: 12px;
+            background: #f0f9ff;
+            border-left: 4px solid var(--primary);
+        }
+
+        .update-card.security {
+            background: #fef2f2;
+            border-left-color: var(--danger);
+        }
+
+        .update-card.feature {
+            background: #f0fdf4;
+            border-left-color: var(--secondary);
+        }
+
+        .update-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .update-badge {
+            padding: 0.3rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .badge-security { background: var(--danger); color: white; }
+        .badge-feature { background: var(--secondary); color: white; }
+        .badge-update { background: var(--primary); color: white; }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        /* Events Log Tab */
+        .events-timeline {
+            position: relative;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .events-timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e5e7eb;
+        }
+
+        .event-item {
+            display: flex;
+            align-items: start;
+            gap: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .event-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+            flex-shrink: 0;
+            position: relative;
+            z-index: 2;
+        }
+
+        .event-dot.critical { background: var(--danger); }
+        .event-dot.warning { background: var(--warning); }
+        .event-dot.info { background: var(--primary); }
+        .event-dot.success { background: var(--secondary); }
+
+        .event-content {
+            flex: 1;
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .event-time {
+            color: var(--gray);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .event-description {
+            margin-bottom: 0.5rem;
+        }
+
+        .event-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* Support Tab */
+        .support-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .support-card {
+            padding: 2rem;
+            text-align: center;
+            border-radius: 12px;
+            background: #f8fafc;
+            transition: all 0.3s;
+        }
+
+        .support-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .support-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .support-card.primary {
+            background: linear-gradient(135deg, var(--primary), #1e40af);
+            color: white;
+        }
+
+        .support-card.success {
+            background: linear-gradient(135deg, var(--secondary), #047857);
+            color: white;
+        }
+
+        .support-card.warning {
+            background: linear-gradient(135deg, var(--warning), #b45309);
+            color: white;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .action-btn {
+            padding: 1rem;
+            border: 2px dashed #d1d5db;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f9fafb;
+        }
+
+        .action-btn:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .mobile-menu {
+                display: block;
+            }
+        }
+
+        /* Mobile Menu */
+        .mobile-menu {
+            display: none;
+            background: white;
+            padding: 1rem;
+            border-radius: 15px;
+            margin-bottom: 1rem;
+        }
+
+        .mobile-nav {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+        }
+
+        .mobile-nav-item {
+            text-align: center;
+            padding: 0.8rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .mobile-nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Modal -->
+    <div class="auth-modal active" id="authModal">
+        <div class="auth-content">
+            <div class="auth-tabs">
+                <div class="auth-tab active" data-tab="login">Вход</div>
+                <div class="auth-tab" data-tab="register">Регистрация</div>
+            </div>
+
+            <!-- Login Form -->
+            <div class="auth-form active" id="loginForm">
+                <h2 style="text-align: center; margin-bottom: 2rem; color: var(--dark);">Вход в SafeHome Pro</h2>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="loginPassword" placeholder="Введите пароль">
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="safeHome.login()">
+                    🔐 Войти в систему
+                </button>
+                <div style="text-align: center; margin-top: 1rem; color: var(--gray);">
+                    Нет аккаунта? <a href="#" style="color: var(--primary);" onclick="switchAuthTab('register')">Зарегистрируйтесь</a>
+                </div>
+            </div>
+
+            <!-- Register Form -->
+            <div class="auth-form" id="registerForm">
+                <h2 style="text-align: center; margin-bottom: 2rem; color: var(--dark);">Регистрация в SafeHome Pro</h2>
+                <div class="form-group">
+                    <label>Имя</label>
+                    <input type="text" id="registerName" placeholder="Ваше имя">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="registerEmail" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="registerPassword" placeholder="Создайте пароль">
+                </div>
+                <div class="form-group">
+                    <label>Подтверждение пароля</label>
+                    <input type="password" id="registerConfirm" placeholder="Повторите пароль">
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="safeHome.register()">
+                    🚀 Создать аккаунт
+                </button>
+                <div style="text-align: center; margin-top: 1rem; color: var(--gray);">
+                    Уже есть аккаунт? <a href="#" style="color: var(--primary);" onclick="switchAuthTab('login')">Войдите</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container" style="display: none;" id="mainApp">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">🏠 SafeHome Pro</div>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <span>Система активна • Все датчики онлайн</span>
+                <button class="btn btn-secondary btn-sm" onclick="safeHome.logout()" style="margin-left: 2rem;">
+                    🚪 Выйти
+                </button>
+            </div>
+        </header>
+
+        <!-- Mobile Menu -->
+        <div class="mobile-menu">
+            <div class="mobile-nav">
+                <div class="mobile-nav-item active" data-tab="dashboard">📊</div>
+                <div class="mobile-nav-item" data-tab="notifications">🔔</div>
+                <div class="mobile-nav-item" data-tab="statistics">📈</div>
+                <div class="mobile-nav-item" data-tab="settings">⚙️</div>
+                <div class="mobile-nav-item" data-tab="ml-models">🤖</div>
+                <div class="mobile-nav-item" data-tab="emergency">🚨</div>
+                <div class="mobile-nav-item" data-tab="updates">🔄</div>
+                <div class="mobile-nav-item" data-tab="events">📋</div>
+                <div class="mobile-nav-item" data-tab="support">🛠️</div>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="user-profile">
+                    <div class="user-avatar" id="userAvatar">👤</div>
+                    <h3 id="userName">Гость</h3>
+                    <p style="color: var(--gray); font-size: 0.9rem;" id="userPlan">Базовый план</p>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-title">Основное</div>
+                    <div class="nav-item active" data-tab="dashboard">
+                        📊 Дашборд
+                    </div>
+                    <div class="nav-item" data-tab="notifications">
+                        🔔 Уведомления
+                        <span class="notification-badge" style="background: var(--danger); color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.8rem; display: none;" id="notificationBadge">3</span>
+                    </div>
+                    <div class="nav-item" data-tab="statistics">
+                        📈 Статистика
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-title">Настройки</div>
+                    <div class="nav-item" data-tab="settings">
+                        ⚙️ Настройки системы
+                    </div>
+                    <div class="nav-item" data-tab="ml-models">
+                        🤖 ML Модели
+                    </div>
+                    <div class="nav-item" data-tab="emergency">
+                        🚨 Экстренные контакты
+                    </div>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-title">Система</div>
+                    <div class="nav-item" data-tab="updates">
+                        🔄 Обновления
+                    </div>
+                    <div class="nav-item" data-tab="events">
+                        📋 Журнал событий
+                    </div>
+                    <div class="nav-item" data-tab="support">
+                        🛠️ Техподдержка
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content-area">
+                <!-- Dashboard Tab -->
+                <div class="tab-content active" id="dashboard">
+                    <div class="card alert-panel alert-normal" id="currentAlert">
+                        <div class="card-header">
+                            <div class="card-title">Текущий статус системы</div>
+                            <div class="alert-level level-normal" id="alertLevel">НОРМА</div>
+                        </div>
+                        <p id="alertMessage">Все датчики в норме. Система работает стабильно.</p>
+                        <div class="escalation-progress" id="escalationProgress" style="margin-top: 1rem;"></div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📡 Датчики в реальном времени</div>
+                            <button class="btn btn-primary btn-sm" onclick="safeHome.forceUpdate()">
+                                🔄 Обновить
+                            </button>
+                        </div>
+                        <div class="sensors-grid" id="sensorsGrid">
+                            <!-- Sensors will be dynamically added -->
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🏠 Интеграции с умным домом</div>
+                        </div>
+                        <div class="integration-grid">
+                            <div class="integration-card" onclick="safeHome.connectIntegration('google')">
+                                <div class="integration-icon">🏠</div>
+                                <h3>Google Home</h3>
+                                <p>Управление через Google Assistant</p>
+                                <div class="integration-status status-disconnected">Не подключено</div>
+                            </div>
+                            <div class="integration-card" onclick="safeHome.connectIntegration('apple')">
+                                <div class="integration-icon">🍎</div>
+                                <h3>Apple HomeKit</h3>
+                                <p>Интеграция с экосистемой Apple</p>
+                                <div class="integration-status status-disconnected">Не подключено</div>
+                            </div>
+                            <div class="integration-card" onclick="safeHome.connectIntegration('alexa')">
+                                <div class="integration-icon">🔵</div>
+                                <h3>Amazon Alexa</h3>
+                                <p>Голосовое управление через Alexa</p>
+                                <div class="integration-status status-disconnected">Не подключено</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🚨 Система эскалации оповещений</div>
+                        </div>
+                        <div class="timeline" id="escalationTimeline" style="display: grid; gap: 1rem; margin-top: 1rem;">
+                            <div class="timeline-item" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f8fafc; border-radius: 10px;">
+                                <div class="timeline-dot" style="width: 12px; height: 12px; border-radius: 50%; background: var(--gray);"></div>
+                                <span>Push-уведомление</span>
+                            </div>
+                            <div class="timeline-item" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f8fafc; border-radius: 10px;">
+                                <div class="timeline-dot" style="width: 12px; height: 12px; border-radius: 50%; background: var(--gray);"></div>
+                                <span>SMS-оповещение</span>
+                            </div>
+                            <div class="timeline-item" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f8fafc; border-radius: 10px;">
+                                <div class="timeline-dot" style="width: 12px; height: 12px; border-radius: 50%; background: var(--gray);"></div>
+                                <span>Звонок пользователю</span>
+                            </div>
+                            <div class="timeline-item" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #f8fafc; border-radius: 10px;">
+                                <div class="timeline-dot" style="width: 12px; height: 12px; border-radius: 50%; background: var(--gray);"></div>
+                                <span>Экстренные службы</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                            <button class="btn btn-danger" onclick="safeHome.triggerEmergencyTest()">
+                                🚨 ТЕСТ Тревоги
+                            </button>
+                            <button class="btn btn-secondary" onclick="safeHome.acknowledgeAllAlerts()">
+                                ✅ Сбросить все оповещения
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications Tab -->
+                <div class="tab-content" id="notifications">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🔔 История уведомлений</div>
+                            <div style="display: flex; gap: 1rem;">
+                                <button class="btn btn-secondary btn-sm" onclick="safeHome.markAllAsRead()">
+                                    📭 Отметить все прочитанными
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="safeHome.clearNotifications()">
+                                    🗑️ Очистить историю
+                                </button>
+                            </div>
+                        </div>
+                        <div class="notifications-list" id="notificationsList">
+                            <!-- Notifications will be dynamically added -->
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">⚙️ Настройки уведомлений</div>
+                        </div>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <span>Push-уведомления</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleSetting('pushNotifications', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Email оповещения</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleSetting('emailNotifications', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>SMS сообщения</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" onchange="safeHome.toggleSetting('smsNotifications', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Звонки при критических событиях</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleSetting('callNotifications', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Tab -->
+                <div class="tab-content" id="statistics">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Дней без инцидентов</div>
+                            <div class="stat-value">47</div>
+                            <div>📅 Рекорд: 89 дней</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, var(--secondary), #047857);">
+                            <div class="stat-label">Срабатываний системы</div>
+                            <div class="stat-value">12</div>
+                            <div>🎯 Эффективность: 100%</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, var(--warning), #b45309);">
+                            <div class="stat-label">Предупреждений</div>
+                            <div class="stat-value">8</div>
+                            <div>⚠️ За последний месяц</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                            <div class="stat-label">Экономия на страховке</div>
+                            <div class="stat-value">15%</div>
+                            <div>💰 Благодаря системе</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📊 Статистика срабатываний по месяцам</div>
+                        </div>
+                        <div class="chart-container" id="statisticsChart">
+                            <div style="display: flex; align-items: end; justify-content: space-around; height: 100%; padding: 2rem;">
+                                <div style="text-align: center;">
+                                    <div style="background: var(--primary); height: 80px; width: 30px; border-radius: 5px;"></div>
+                                    <div style="margin-top: 0.5rem;">Янв</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="background: var(--primary); height: 120px; width: 30px; border-radius: 5px;"></div>
+                                    <div style="margin-top: 0.5rem;">Фев</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="background: var(--primary); height: 60px; width: 30px; border-radius: 5px;"></div>
+                                    <div style="margin-top: 0.5rem;">Мар</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="background: var(--warning); height: 180px; width: 30px; border-radius: 5px;"></div>
+                                    <div style="margin-top: 0.5rem;">Апр</div>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="background: var(--danger); height: 220px; width: 30px; border-radius: 5px;"></div>
+                                    <div style="margin-top: 0.5rem;">Май</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📈 Эффективность ML моделей</div>
+                        </div>
+                        <div class="model-metrics">
+                            <div class="metric">
+                                <div class="metric-value">94.2%</div>
+                                <div>Обнаружение аномалий</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-value">88.7%</div>
+                                <div>Прогнозный анализ</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-value">96.1%</div>
+                                <div>Классификация</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-value">91.5%</div>
+                                <div>Общая точность</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div class="tab-content" id="settings">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">⚙️ Основные настройки</div>
+                        </div>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <span>Автоматический мониторинг</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleSetting('autoMonitoring', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Ночной режим</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" onchange="safeHome.toggleSetting('nightMode', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Энергосберегающий режим</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleSetting('powerSaving', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Резервное питание</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleSetting('backupPower', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🔐 Безопасность</div>
+                        </div>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <span>Двухфакторная аутентификация</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleSetting('twoFactorAuth', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Шифрование данных</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleSetting('dataEncryption', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Автоматическое резервное копирование</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleSetting('autoBackup', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🌐 Интеграции</div>
+                        </div>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <span>Умный дом (Google Home)</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" onchange="safeHome.toggleIntegration('googleHome', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Apple HomeKit</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleIntegration('appleHomeKit', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Amazon Alexa</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" onchange="safeHome.toggleIntegration('amazonAlexa', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Telegram бот</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleIntegration('telegramBot', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ML Models Tab -->
+                <div class="tab-content" id="ml-models">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🤖 Machine Learning Модели</div>
+                            <button class="btn btn-primary btn-sm" onclick="safeHome.retrainModels()">
+                                🔄 Переобучить модели
+                            </button>
+                        </div>
+                        <div class="models-grid">
+                            <div class="model-card">
+                                <h4>🎯 Обнаружение аномалий</h4>
+                                <p>Выявление отклонений в показаниях датчиков от нормальной картины с помощью изолирующего леса.</p>
+                                <div class="model-stats">
+                                    <span>Точность: <strong>94.2%</strong></span>
+                                    <span>Обучена: <strong>2 дня назад</strong></span>
+                                </div>
+                                <div class="model-metrics">
+                                    <div class="metric">
+                                        <div class="metric-value">98%</div>
+                                        <div>Recall</div>
+                                    </div>
+                                    <div class="metric">
+                                        <div class="metric-value">92%</div>
+                                        <div>Precision</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="model-card">
+                                <h4>📊 Прогнозный анализ</h4>
+                                <p>Предсказание вероятности аварии на основе исторических данных с использованием LSTM сетей.</p>
+                                <div class="model-stats">
+                                    <span>Точность: <strong>88.7%</strong></span>
+                                    <span>Обучена: <strong>5 дней назад</strong></span>
+                                </div>
+                                <div class="model-metrics">
+                                    <div class="metric">
+                                        <div class="metric-value">85%</div>
+                                        <div>Recall</div>
+                                    </div>
+                                    <div class="metric">
+                                        <div class="metric-value">91%</div>
+                                        <div>Precision</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="model-card">
+                                <h4>🏷️ Классификация событий</h4>
+                                <p>Определение типа угрозы с помощью сверточных нейронных сетей и анализа временных рядов.</p>
+                                <div class="model-stats">
+                                    <span>Точность: <strong>96.1%</strong></span>
+                                    <span>Обучена: <strong>1 день назад</strong></span>
+                                </div>
+                                <div class="model-metrics">
+                                    <div class="metric">
+                                        <div class="metric-value">97%</div>
+                                        <div>Recall</div>
+                                    </div>
+                                    <div class="metric">
+                                        <div class="metric-value">95%</div>
+                                        <div>Precision</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📈 Производительность моделей</div>
+                        </div>
+                        <div class="chart-container" id="mlPerformanceChart">
+                            <div style="text-align: center; padding: 3rem; color: var(--gray);">
+                                📊 Графики производительности ML моделей<br>
+                                <small>(В реальном приложении здесь были бы интерактивные графики)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emergency Contacts Tab -->
+                <div class="tab-content" id="emergency">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🚨 Экстренные контакты</div>
+                            <button class="btn btn-primary btn-sm" onclick="safeHome.showAddContactModal()">
+                                ➕ Добавить контакт
+                            </button>
+                        </div>
+                        <div class="contacts-list" id="contactsList">
+                            <div class="contact-card">
+                                <div class="contact-avatar">МЧ</div>
+                                <div class="contact-info">
+                                    <div style="font-weight: bold;">МЧС России</div>
+                                    <div style="color: var(--gray);">101 • Экстренная служба</div>
+                                </div>
+                                <div class="contact-actions">
+                                    <button class="btn btn-danger btn-sm" onclick="safeHome.callEmergency('МЧС')">🚨 Вызов</button>
+                                </div>
+                            </div>
+                            <div class="contact-card">
+                                <div class="contact-avatar">СК</div>
+                                <div class="contact-info">
+                                    <div style="font-weight: bold;">Скорая помощь</div>
+                                    <div style="color: var(--gray);">103 • Медицинская помощь</div>
+                                </div>
+                                <div class="contact-actions">
+                                    <button class="btn btn-danger btn-sm" onclick="safeHome.callEmergency('Скорая')">🚨 Вызов</button>
+                                </div>
+                            </div>
+                            <div class="contact-card">
+                                <div class="contact-avatar">П</div>
+                                <div class="contact-info">
+                                    <div style="font-weight: bold;">Полиция</div>
+                                    <div style="color: var(--gray);">102 • Полиция</div>
+                                </div>
+                                <div class="contact-actions">
+                                    <button class="btn btn-danger btn-sm" onclick="safeHome.callEmergency('Полиция')">🚨 Вызов</button>
+                                </div>
+                            </div>
+                            <div class="contact-card">
+                                <div class="contact-avatar">А</div>
+                                <div class="contact-info">
+                                    <div style="font-weight: bold;">Алексей (Сосед)</div>
+                                    <div style="color: var(--gray);">+7 (999) 123-45-67</div>
+                                </div>
+                                <div class="contact-actions">
+                                    <button class="btn btn-primary btn-sm" onclick="safeHome.callContact('Алексей')">📞 Позвонить</button>
+                                    <button class="btn btn-secondary btn-sm" onclick="safeHome.editContact('Алексей')">✏️</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🆘 Автоматические действия</div>
+                        </div>
+                        <div class="settings-grid">
+                            <div class="setting-item">
+                                <span>Автовызов МЧС при пожаре</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleSetting('autoCallFire', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Уведомление соседей</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleSetting('notifyNeighbors', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Отключение электричества</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" onchange="safeHome.toggleSetting('powerCutoff', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <span>Блокировка воды при потопе</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked onchange="safeHome.toggleSetting('waterBlock', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Updates Tab -->
+                <div class="tab-content" id="updates">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🔄 Обновления системы</div>
+                            <button class="btn btn-primary" onclick="safeHome.checkForUpdates()">
+                                🔍 Проверить обновления
+                            </button>
+                        </div>
+                        <div class="updates-grid">
+                            <div class="update-card security">
+                                <div class="update-header">
+                                    <div>
+                                        <h4>🛡️ Обновление безопасности v2.1.3</h4>
+                                        <p style="color: var(--gray); margin-top: 0.5rem;">Критическое обновление для устранения уязвимостей</p>
+                                    </div>
+                                    <div class="update-badge badge-security">БЕЗОПАСНОСТЬ</div>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 100%"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span>Установлено • 15.12.2023</span>
+                                    <button class="btn btn-sm btn-secondary" onclick="safeHome.showUpdateDetails('security')">Подробнее</button>
+                                </div>
+                            </div>
+
+                            <div class="update-card feature">
+                                <div class="update-header">
+                                    <div>
+                                        <h4>🎯 Новая ML модель v1.5.0</h4>
+                                        <p style="color: var(--gray); margin-top: 0.5rem;">Улучшенная точность обнаружения аномалий на 12%</p>
+                                    </div>
+                                    <div class="update-badge badge-feature">ФУНКЦИОНАЛ</div>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 100%"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span>Установлено • 10.12.2023</span>
+                                    <button class="btn btn-sm btn-secondary" onclick="safeHome.showUpdateDetails('feature')">Подробнее</button>
+                                </div>
+                            </div>
+
+                            <div class="update-card">
+                                <div class="update-header">
+                                    <div>
+                                        <h4>📱 Обновление интерфейса v2.0.1</h4>
+                                        <p style="color: var(--gray); margin-top: 0.5rem;">Новый дизайн и улучшенная навигация</p>
+                                    </div>
+                                    <div class="update-badge badge-update">ОБНОВЛЕНИЕ</div>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: 75%"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span>Загружено 75% • 14.12.2023</span>
+                                    <button class="btn btn-sm btn-primary" onclick="safeHome.installUpdate()">
+                                        ⚡ Установить сейчас
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📋 История обновлений</div>
+                        </div>
+                        <div style="display: grid; gap: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                                <div>
+                                    <div style="font-weight: bold;">v2.0.0 - Основное обновление</div>
+                                    <div style="color: var(--gray); font-size: 0.9rem;">Добавлена система эскалации и новые датчики</div>
+                                </div>
+                                <div style="color: var(--gray);">01.12.2023</div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8fafc; border-radius: 8px;">
+                                <div>
+                                    <div style="font-weight: bold;">v1.9.5 - Исправление ошибок</div>
+                                    <div style="color: var(--gray); font-size: 0.9rem;">Оптимизация работы ML моделей</div>
+                                </div>
+                                <div style="color: var(--gray);">15.11.2023</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Events Log Tab -->
+                <div class="tab-content" id="events">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📋 Журнал событий системы</div>
+                            <div style="display: flex; gap: 1rem;">
+                                <button class="btn btn-secondary btn-sm" onclick="safeHome.exportEvents()">
+                                    📤 Экспорт логов
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="safeHome.clearEvents()">
+                                    🗑️ Очистить журнал
+                                </button>
+                            </div>
+                        </div>
+                        <div class="events-timeline" id="eventsTimeline">
+                            <div class="event-item">
+                                <div class="event-dot success"></div>
+                                <div class="event-content">
+                                    <div class="event-time">Сегодня, 14:30</div>
+                                    <div class="event-description">
+                                        <strong>✅ Система проверена</strong> - Все компоненты работают нормально
+                                    </div>
+                                    <div class="event-actions">
+                                        <button class="btn btn-sm btn-secondary" onclick="safeHome.showEventDetails(1)">Подробности</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="event-item">
+                                <div class="event-dot warning"></div>
+                                <div class="event-content">
+                                    <div class="event-time">Сегодня, 12:15</div>
+                                    <div class="event-description">
+                                        <strong>⚠️ Повышение температуры</strong> - Датчик на кухне показал 28°C
+                                    </div>
+                                    <div class="event-actions">
+                                        <button class="btn btn-sm btn-secondary" onclick="safeHome.showEventDetails(2)">Подробности</button>
+                                        <button class="btn btn-sm btn-primary" onclick="safeHome.resolveEvent(2)">Отметить решенным</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="event-item">
+                                <div class="event-dot critical"></div>
+                                <div class="event-content">
+                                    <div class="event-time">Сегодня, 10:45</div>
+                                    <div class="event-description">
+                                        <strong>🚨 Обнаружен дым</strong> - Датчик в гостиной: 15 ppm. Запущена эскалация оповещений
+                                    </div>
+                                    <div class="event-actions">
+                                        <button class="btn btn-sm btn-secondary" onclick="safeHome.showEventDetails(3)">Подробности</button>
+                                        <button class="btn btn-sm btn-danger" onclick="safeHome.createReport(3)">Создать отчет</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="event-item">
+                                <div class="event-dot info"></div>
+                                <div class="event-content">
+                                    <div class="event-time">Вчера, 22:10</div>
+                                    <div class="event-description">
+                                        <strong>🔧 Обновление системы</strong> - Установлено обновление безопасности v2.1.3
+                                    </div>
+                                    <div class="event-actions">
+                                        <button class="btn btn-sm btn-secondary" onclick="safeHome.showEventDetails(4)">Подробности</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📊 Статистика событий</div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                            <div style="text-align: center; padding: 1.5rem; background: #f0f9ff; border-radius: 10px;">
+                                <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">12</div>
+                                <div>Всего событий</div>
+                            </div>
+                            <div style="text-align: center; padding: 1.5rem; background: #fef2f2; border-radius: 10px;">
+                                <div style="font-size: 2rem; font-weight: bold; color: var(--danger);">2</div>
+                                <div>Критических</div>
+                            </div>
+                            <div style="text-align: center; padding: 1.5rem; background: #fef3c7; border-radius: 10px;">
+                                <div style="font-size: 2rem; font-weight: bold; color: var(--warning);">5</div>
+                                <div>Предупреждений</div>
+                            </div>
+                            <div style="text-align: center; padding: 1.5rem; background: #f0fdf4; border-radius: 10px;">
+                                <div style="font-size: 2rem; font-weight: bold; color: var(--secondary);">5</div>
+                                <div>Информационных</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Support Tab -->
+                <div class="tab-content" id="support">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🛠️ Техническая поддержка</div>
+                            <button class="btn btn-primary" onclick="safeHome.contactSupport()">
+                                💬 Связаться с поддержкой
+                            </button>
+                        </div>
+                        <div class="support-grid">
+                            <div class="support-card primary">
+                                <div class="support-icon">📞</div>
+                                <h3>Экстренная поддержка</h3>
+                                <p>Круглосуточная телефонная линия для критических ситуаций</p>
+                                <button class="btn btn-success" style="margin-top: 1rem;" onclick="safeHome.callEmergencySupport()">
+                                    🚨 Позвонить сейчас
+                                </button>
+                            </div>
+
+                            <div class="support-card success">
+                                <div class="support-icon">💬</div>
+                                <h3>Онлайн-чат</h3>
+                                <p>Быстрая помощь через онлайн-чат с техническими специалистами</p>
+                                <button class="btn btn-primary" style="margin-top: 1rem;" onclick="safeHome.startChat()">
+                                    💬 Начать чат
+                                </button>
+                            </div>
+
+                            <div class="support-card warning">
+                                <div class="support-icon">📧</div>
+                                <h3>Email поддержка</h3>
+                                <p>Подробные консультации и помощь по электронной почте</p>
+                                <button class="btn btn-secondary" style="margin-top: 1rem;" onclick="safeHome.sendEmail()">
+                                    📧 Написать письмо
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">🚀 Быстрые действия</div>
+                        </div>
+                        <div class="quick-actions">
+                            <div class="action-btn" onclick="safeHome.systemDiagnostic()">
+                                <div style="font-size: 2rem;">🔍</div>
+                                <div>Диагностика системы</div>
+                            </div>
+                            <div class="action-btn" onclick="safeHome.resetSettings()">
+                                <div style="font-size: 2rem;">🔄</div>
+                                <div>Сброс настроек</div>
+                            </div>
+                            <div class="action-btn" onclick="safeHome.backupSystem()">
+                                <div style="font-size: 2rem;">💾</div>
+                                <div>Резервное копирование</div>
+                            </div>
+                            <div class="action-btn" onclick="safeHome.restoreSystem()">
+                                <div style="font-size: 2rem;">📥</div>
+                                <div>Восстановление</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">📚 Полезные ресурсы</div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                            <div style="padding: 1.5rem; background: #f8fafc; border-radius: 10px;">
+                                <h4>📖 Руководство пользователя</h4>
+                                <p style="margin: 0.5rem 0; color: var(--gray);">Полное руководство по использованию системы</p>
+                                <button class="btn btn-sm btn-secondary" onclick="safeHome.openUserManual()">Открыть</button>
+                            </div>
+                            <div style="padding: 1.5rem; background: #f8fafc; border-radius: 10px;">
+                                <h4>❓ Частые вопросы</h4>
+                                <p style="margin: 0.5rem 0; color: var(--gray);">Ответы на популярные вопросы</p>
+                                <button class="btn btn-sm btn-secondary" onclick="safeHome.openFAQ()">Открыть</button>
+                            </div>
+                            <div style="padding: 1.5rem; background: #f8fafc; border-radius: 10px;">
+                                <h4>🎥 Видеоуроки</h4>
+                                <p style="margin: 0.5rem 0; color: var(--gray);">Обучающие видео по настройке</p>
+                                <button class="btn btn-sm btn-secondary" onclick="safeHome.openVideoTutorials()">Смотреть</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== ENHANCED SAFE HOME SYSTEM =====
+        class SafeHomeSystem {
+            constructor() {
+                this.sensors = [];
+                this.alerts = [];
+                this.notifications = [];
+                this.contacts = [];
+                this.mlModels = {};
+                this.escalationLevel = 0;
+                this.isEmergency = false;
+                this.currentTab = 'dashboard';
+                this.user = null;
+                this.integrations = {
+                    google: false,
+                    apple: false,
+                    alexa: false
+                };
+                this.settings = {
+                    pushNotifications: true,
+                    emailNotifications: true,
+                    smsNotifications: false,
+                    callNotifications: true,
+                    autoMonitoring: true,
+                    nightMode: false,
+                    powerSaving: true,
+                    backupPower: true,
+                    twoFactorAuth: true,
+                    dataEncryption: true,
+                    autoBackup: true,
+                    autoCallFire: true,
+                    notifyNeighbors: true,
+                    powerCutoff: false,
+                    waterBlock: true
+                };
+                
+                this.init();
+            }
+
+            init() {
+                this.initializeSensors();
+                this.initializeNotifications();
+                this.setupEventListeners();
+                this.checkAuthStatus();
+            }
+
+            // ===== AUTHENTICATION SYSTEM =====
+            checkAuthStatus() {
+                const savedUser = localStorage.getItem('safeHomeUser');
+                if (savedUser) {
+                    this.user = JSON.parse(savedUser);
+                    this.showMainApp();
+                } else {
+                    this.showAuthModal();
+                }
+            }
+
+            showAuthModal() {
+                document.getElementById('authModal').classList.add('active');
+                document.getElementById('mainApp').style.display = 'none';
+            }
+
+            showMainApp() {
+                document.getElementById('authModal').classList.remove('active');
+                document.getElementById('mainApp').style.display = 'block';
+                this.updateUserInterface();
+                this.setupTabNavigation();
+                this.startMonitoring();
+            }
+
+            login() {
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+
+                if (!email || !password) {
+                    alert('⚠️ Пожалуйста, заполните все поля');
+                    return;
+                }
+
+                // Имитация успешного входа
+                this.user = {
+                    name: 'Алексей Петров',
+                    email: email,
+                    plan: 'Премиум',
+                    avatar: '👤'
+                };
+
+                localStorage.setItem('safeHomeUser', JSON.stringify(this.user));
+                this.showMainApp();
+                alert('✅ Вход выполнен успешно!');
+            }
+
+            register() {
+                const name = document.getElementById('registerName').value;
+                const email = document.getElementById('registerEmail').value;
+                const password = document.getElementById('registerPassword').value;
+                const confirm = document.getElementById('registerConfirm').value;
+
+                if (!name || !email || !password || !confirm) {
+                    alert('⚠️ Пожалуйста, заполните все поля');
+                    return;
+                }
+
+                if (password !== confirm) {
+                    alert('⚠️ Пароли не совпадают');
+                    return;
+                }
+
+                if (password.length < 6) {
+                    alert('⚠️ Пароль должен содержать минимум 6 символов');
+                    return;
+                }
+
+                // Имитация успешной регистрации
+                this.user = {
+                    name: name,
+                    email: email,
+                    plan: 'Базовый',
+                    avatar: '👤'
+                };
+
+                localStorage.setItem('safeHomeUser', JSON.stringify(this.user));
+                this.showMainApp();
+                alert('🎉 Регистрация завершена! Добро пожаловать в SafeHome Pro!');
+            }
+
+            logout() {
+                if (confirm('Вы уверены, что хотите выйти?')) {
+                    this.user = null;
+                    localStorage.removeItem('safeHomeUser');
+                    this.showAuthModal();
+                    // Сброс форм
+                    document.getElementById('loginEmail').value = '';
+                    document.getElementById('loginPassword').value = '';
+                    document.getElementById('registerName').value = '';
+                    document.getElementById('registerEmail').value = '';
+                    document.getElementById('registerPassword').value = '';
+                    document.getElementById('registerConfirm').value = '';
+                }
+            }
+
+            updateUserInterface() {
+                if (this.user) {
+                    document.getElementById('userName').textContent = this.user.name;
+                    document.getElementById('userPlan').textContent = this.user.plan;
+                    document.getElementById('userAvatar').textContent = this.user.avatar;
+                }
+            }
+
+            // ===== SMART HOME INTEGRATIONS =====
+            connectIntegration(integration) {
+                if (!this.user) {
+                    alert('⚠️ Пожалуйста, войдите в систему для подключения интеграций');
+                    return;
+                }
+
+                const integrationNames = {
+                    google: 'Google Home',
+                    apple: 'Apple HomeKit',
+                    alexa: 'Amazon Alexa'
+                };
+
+                if (this.integrations[integration]) {
+                    if (confirm(`Отключить интеграцию с ${integrationNames[integration]}?`)) {
+                        this.integrations[integration] = false;
+                        this.updateIntegrationUI(integration, false);
+                        alert(`🔌 Интеграция с ${integrationNames[integration]} отключена`);
+                    }
+                } else {
+                    // Имитация процесса подключения
+                    alert(`🔗 Подключение к ${integrationNames[integration]}...`);
+                    setTimeout(() => {
+                        this.integrations[integration] = true;
+                        this.updateIntegrationUI(integration, true);
+                        alert(`✅ Успешно подключено к ${integrationNames[integration]}!`);
+                    }, 2000);
+                }
+            }
+
+            updateIntegrationUI(integration, connected) {
+                const card = document.querySelector(`.integration-card:nth-child(${this.getIntegrationIndex(integration)})`);
+                const status = card.querySelector('.integration-status');
+                
+                if (connected) {
+                    card.classList.add('connected');
+                    status.className = 'integration-status status-connected';
+                    status.textContent = 'Подключено';
+                } else {
+                    card.classList.remove('connected');
+                    status.className = 'integration-status status-disconnected';
+                    status.textContent = 'Не подключено';
+                }
+            }
+
+            getIntegrationIndex(integration) {
+                const integrations = ['google', 'apple', 'alexa'];
+                return integrations.indexOf(integration) + 1;
+            }
+
+            // ===== NOTIFICATIONS SYSTEM =====
+            initializeNotifications() {
+                this.notifications = [
+                    {
+                        id: 1,
+                        type: 'info',
+                        title: 'Система запущена',
+                        message: 'SafeHome Pro успешно активирована',
+                        timestamp: new Date(Date.now() - 300000),
+                        read: true
+                    },
+                    {
+                        id: 2,
+                        type: 'warning',
+                        title: 'Повышение температуры',
+                        message: 'Температура на кухне достигла 28°C',
+                        timestamp: new Date(Date.now() - 180000),
+                        read: false
+                    },
+                    {
+                        id: 3,
+                        type: 'critical',
+                        title: 'Обнаружен дым',
+                        message: 'Датчик дыма в гостиной показывает 15 ppm',
+                        timestamp: new Date(Date.now() - 120000),
+                        read: false
+                    }
+                ];
+                this.updateNotificationBadge();
+            }
+
+            renderNotifications() {
+                const list = document.getElementById('notificationsList');
+                list.innerHTML = this.notifications.map(notif => `
+                    <div class="notification-item ${notif.read ? '' : 'unread'}">
+                        <div class="notification-icon notification-${notif.type}">
+                            ${notif.type === 'critical' ? '🚨' : notif.type === 'warning' ? '⚠️' : 'ℹ️'}
+                        </div>
+                        <div class="notification-content">
+                            <div style="font-weight: bold;">${notif.title}</div>
+                            <div>${notif.message}</div>
+                            <div class="notification-time">
+                                ${this.formatTime(notif.timestamp)}
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-secondary" onclick="safeHome.markAsRead(${notif.id})">
+                            ${notif.read ? '✓' : '📭'}
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            markAsRead(notificationId) {
+                const notification = this.notifications.find(n => n.id === notificationId);
+                if (notification && !notification.read) {
+                    notification.read = true;
+                    this.renderNotifications();
+                    this.updateNotificationBadge();
+                }
+            }
+
+            markAllAsRead() {
+                let hasUnread = false;
+                this.notifications.forEach(notif => {
+                    if (!notif.read) {
+                        notif.read = true;
+                        hasUnread = true;
+                    }
+                });
+                
+                if (hasUnread) {
+                    this.renderNotifications();
+                    this.updateNotificationBadge();
+                    alert('✅ Все уведомления отмечены как прочитанные');
+                }
+            }
+
+            updateNotificationBadge() {
+                const unreadCount = this.notifications.filter(n => !n.read).length;
+                const badge = document.getElementById('notificationBadge');
+                
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount;
+                    badge.style.display = 'block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            // ===== SENSOR MANAGEMENT =====
+            initializeSensors() {
+                this.sensors = [
+                    { id: 'temp', name: '🌡️ Температура', value: 22, unit: '°C', normalRange: [18, 25], status: 'normal' },
+                    { id: 'humidity', name: '💧 Влажность', value: 45, unit: '%', normalRange: [30, 60], status: 'normal' },
+                    { id: 'smoke', name: '🔥 Дым', value: 0, unit: 'ppm', normalRange: [0, 10], status: 'normal' },
+                    { id: 'gas', name: '⛽ Газ', value: 0, unit: 'ppm', normalRange: [0, 5], status: 'normal' },
+                    { id: 'water', name: '💦 Датчик воды', value: 0, unit: 'leak', normalRange: [0, 0], status: 'normal' },
+                    { id: 'power', name: '⚡ Энергопотребление', value: 1.2, unit: 'kW', normalRange: [0.5, 2], status: 'normal' }
+                ];
+                this.renderSensors();
+            }
+
+            renderSensors() {
+                const grid = document.getElementById('sensorsGrid');
+                grid.innerHTML = this.sensors.map(sensor => `
+                    <div class="sensor-card">
+                        <h4>${sensor.name}</h4>
+                        <div class="sensor-value">${Math.round(sensor.value)}${sensor.unit}</div>
+                        <div class="sensor-status" style="background: ${this.getStatusColor(sensor.status)}; color: white;">
+                            ${this.getStatusText(sensor.status)}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            getStatusColor(status) {
+                const colors = {
+                    'normal': '#059669',
+                    'warning': '#d97706',
+                    'critical': '#dc2626'
+                };
+                return colors[status] || '#6b7280';
+            }
+
+            getStatusText(status) {
+                const statusMap = {
+                    'normal': 'НОРМА',
+                    'warning': 'ВНИМАНИЕ',
+                    'critical': 'ОПАСНОСТЬ'
+                };
+                return statusMap[status] || 'НЕИЗВЕСТНО';
+            }
+
+            // ===== TAB NAVIGATION =====
+            setupTabNavigation() {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const tab = item.dataset.tab;
+                        if (tab) {
+                            this.switchTab(tab);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.mobile-nav-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const tab = item.dataset.tab;
+                        if (tab) {
+                            this.switchTab(tab);
+                        }
+                    });
+                });
+            }
+
+            switchTab(tabName) {
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                document.querySelectorAll('.mobile-nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+
+                document.getElementById(tabName).classList.add('active');
+
+                const desktopNav = document.querySelector(`.nav-item[data-tab="${tabName}"]`);
+                const mobileNav = document.querySelector(`.mobile-nav-item[data-tab="${tabName}"]`);
+                
+                if (desktopNav) desktopNav.classList.add('active');
+                if (mobileNav) mobileNav.classList.add('active');
+
+                this.currentTab = tabName;
+
+                // При переходе на вкладку уведомлений убираем бейдж
+                if (tabName === 'notifications') {
+                    this.renderNotifications();
+                }
+            }
+
+            // ===== SETTINGS MANAGEMENT =====
+            toggleSetting(settingName, value) {
+                this.settings[settingName] = value;
+                console.log(`Настройка ${settingName} изменена на: ${value}`);
+                this.showToast(`Настройка "${this.getSettingName(settingName)}" ${value ? 'включена' : 'выключена'}`);
+            }
+
+            toggleIntegration(integration, value) {
+                console.log(`Интеграция ${integration} ${value ? 'подключена' : 'отключена'}`);
+                this.showToast(`Интеграция "${this.getIntegrationName(integration)}" ${value ? 'подключена' : 'отключена'}`);
+            }
+
+            getSettingName(setting) {
+                const names = {
+                    'pushNotifications': 'Push-уведомления',
+                    'emailNotifications': 'Email оповещения',
+                    'smsNotifications': 'SMS сообщения',
+                    'callNotifications': 'Звонки при критических событиях',
+                    'autoMonitoring': 'Автоматический мониторинг',
+                    'nightMode': 'Ночной режим',
+                    'powerSaving': 'Энергосберегающий режим',
+                    'backupPower': 'Резервное питание',
+                    'twoFactorAuth': 'Двухфакторная аутентификация',
+                    'dataEncryption': 'Шифрование данных',
+                    'autoBackup': 'Автоматическое резервное копирование',
+                    'autoCallFire': 'Автовызов МЧС при пожаре',
+                    'notifyNeighbors': 'Уведомление соседей',
+                    'powerCutoff': 'Отключение электричества',
+                    'waterBlock': 'Блокировка воды при потопе'
+                };
+                return names[setting] || setting;
+            }
+
+            getIntegrationName(integration) {
+                const names = {
+                    'googleHome': 'Google Home',
+                    'appleHomeKit': 'Apple HomeKit',
+                    'amazonAlexa': 'Amazon Alexa',
+                    'telegramBot': 'Telegram бот'
+                };
+                return names[integration] || integration;
+            }
+
+            // ===== EMERGENCY CONTACTS =====
+            showAddContactModal() {
+                const name = prompt('Введите имя контакта:');
+                if (!name) return;
+
+                const phone = prompt('Введите номер телефона:');
+                if (!phone) return;
+
+                this.addContact(name, phone);
+            }
+
+            addContact(name, phone) {
+                const newContact = {
+                    id: Date.now(),
+                    name: name,
+                    phone: phone,
+                    avatar: name.charAt(0).toUpperCase()
+                };
+
+                const contactsList = document.getElementById('contactsList');
+                const contactHTML = `
+                    <div class="contact-card">
+                        <div class="contact-avatar">${newContact.avatar}</div>
+                        <div class="contact-info">
+                            <div style="font-weight: bold;">${name}</div>
+                            <div style="color: var(--gray);">${phone}</div>
+                        </div>
+                        <div class="contact-actions">
+                            <button class="btn btn-primary btn-sm" onclick="safeHome.callContact('${name}')">📞 Позвонить</button>
+                            <button class="btn btn-secondary btn-sm" onclick="safeHome.editContact('${name}')">✏️</button>
+                            <button class="btn btn-danger btn-sm" onclick="safeHome.deleteContact(${newContact.id})">🗑️</button>
+                        </div>
+                    </div>
+                `;
+
+                contactsList.insertAdjacentHTML('beforeend', contactHTML);
+                this.showToast(`Контакт "${name}" добавлен`);
+            }
+
+            callEmergency(service) {
+                if (confirm(`Вы уверены, что хотите вызвать ${service}?`)) {
+                    this.showToast(`🚨 Вызов ${service}... Имитация вызова службы спасения`);
+                    // В реальном приложении здесь был бы код для реального вызова
+                }
+            }
+
+            callContact(name) {
+                this.showToast(`📞 Звонок ${name}... Имитация телефонного вызова`);
+            }
+
+            editContact(name) {
+                const newName = prompt('Введите новое имя:', name);
+                if (!newName) return;
+
+                const newPhone = prompt('Введите новый номер телефона:');
+                if (!newPhone) return;
+
+                this.showToast(`Контакт "${name}" обновлен на "${newName}"`);
+            }
+
+            deleteContact(contactId) {
+                if (confirm('Удалить этот контакт?')) {
+                    // Здесь должна быть логика удаления из массива контактов
+                    this.showToast('Контакт удален');
+                }
+            }
+
+            // ===== UPDATES SYSTEM =====
+            checkForUpdates() {
+                this.showToast('🔍 Проверка обновлений...', 'info');
+                setTimeout(() => {
+                    this.showToast('✅ Система обновлена до последней версии', 'success');
+                }, 2000);
+            }
+
+            installUpdate() {
+                if (confirm('Установить обновление системы? Система может быть временно недоступна.')) {
+                    this.showToast('⚡ Установка обновления...', 'warning');
+                    
+                    let progress = 75;
+                    const progressBar = document.querySelector('.update-card:last-child .progress-fill');
+                    const interval = setInterval(() => {
+                        progress += 5;
+                        progressBar.style.width = `${progress}%`;
+                        
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                            setTimeout(() => {
+                                this.showToast('✅ Обновление успешно установлено!', 'success');
+                            }, 500);
+                        }
+                    }, 200);
+                }
+            }
+
+            showUpdateDetails(type) {
+                const details = {
+                    'security': 'Критическое обновление безопасности. Устранены уязвимости в системе шифрования и аутентификации.',
+                    'feature': 'Новая ML модель с улучшенной точностью обнаружения аномалий на 12%. Добавлена поддержка новых типов датчиков.',
+                    'update': 'Обновление интерфейса с улучшенной навигацией и новой цветовой схемой. Оптимизирована работа на мобильных устройствах.'
+                };
+                
+                alert(`📋 Детали обновления:\n\n${details[type]}`);
+            }
+
+            // ===== EVENTS LOG =====
+            exportEvents() {
+                this.showToast('📤 Экспорт журнала событий...', 'info');
+                setTimeout(() => {
+                    this.showToast('✅ Журнал событий экспортирован в формате CSV', 'success');
+                }, 1500);
+            }
+
+            clearEvents() {
+                if (confirm('Очистить весь журнал событий? Это действие нельзя отменить.')) {
+                    const timeline = document.getElementById('eventsTimeline');
+                    timeline.innerHTML = '<div class="event-item"><div class="event-dot info"></div><div class="event-content"><div class="event-time">Только что</div><div class="event-description"><strong>🗑️ Журнал очищен</strong> - Все события удалены</div></div></div>';
+                    this.showToast('🗑️ Журнал событий очищен');
+                }
+            }
+
+            showEventDetails(eventId) {
+                const eventDetails = {
+                    1: 'Полная проверка системы завершена успешно. Все 6 датчиков работают в нормальном режиме.',
+                    2: 'Температурный датчик на кухне зафиксировал повышение до 28°C. Рекомендуется проверить работу отопительной системы.',
+                    3: 'Датчик дыма в гостиной зафиксировал концентрацию 15 ppm. Система автоматически запустила протокол эскалации.',
+                    4: 'Установлено обновление безопасности v2.1.3. Улучшена система шифрования и исправлены мелкие ошибки.'
+                };
+                
+                alert(`📋 Детали события #${eventId}:\n\n${eventDetails[eventId]}`);
+            }
+
+            resolveEvent(eventId) {
+                this.showToast(`✅ Событие #${eventId} отмечено как решенное`);
+            }
+
+            createReport(eventId) {
+                this.showToast('📄 Создание отчета по событию...', 'info');
+                setTimeout(() => {
+                    this.showToast('✅ Отчет создан и отправлен на email', 'success');
+                }, 2000);
+            }
+
+            // ===== SUPPORT SYSTEM =====
+            contactSupport() {
+                const issue = prompt('Опишите вашу проблему:');
+                if (issue) {
+                    this.showToast('📨 Запрос в поддержку отправлен. Мы свяжемся с вами в ближайшее время.');
+                }
+            }
+
+            callEmergencySupport() {
+                if (confirm('Позвонить в экстренную поддержку? Это платная услуга.')) {
+                    this.showToast('📞 Соединение с экстренной поддержкой...');
+                }
+            }
+
+            startChat() {
+                this.showToast('💬 Чат с поддержкой открыт в новом окне');
+            }
+
+            sendEmail() {
+                this.showToast('📧 Открытие почтового клиента...');
+            }
+
+            systemDiagnostic() {
+                this.showToast('🔍 Запуск диагностики системы...', 'info');
+                setTimeout(() => {
+                    this.showToast('✅ Диагностика завершена. Проблем не обнаружено.', 'success');
+                }, 3000);
+            }
+
+            resetSettings() {
+                if (confirm('Сбросить все настройки к значениям по умолчанию?')) {
+                    this.showToast('🔄 Сброс настроек...', 'warning');
+                    setTimeout(() => {
+                        this.showToast('✅ Настройки сброшены к значениям по умолчанию', 'success');
+                    }, 2000);
+                }
+            }
+
+            backupSystem() {
+                this.showToast('💾 Создание резервной копии...', 'info');
+                setTimeout(() => {
+                    this.showToast('✅ Резервная копия создана успешно', 'success');
+                }, 2500);
+            }
+
+            restoreSystem() {
+                if (confirm('Восстановить систему из резервной копии? Текущие данные будут заменены.')) {
+                    this.showToast('📥 Восстановление системы...', 'warning');
+                    setTimeout(() => {
+                        this.showToast('✅ Система восстановлена из резервной копии', 'success');
+                    }, 3000);
+                }
+            }
+
+            openUserManual() {
+                this.showToast('📖 Открытие руководства пользователя...');
+            }
+
+            openFAQ() {
+                this.showToast('❓ Открытие раздела часто задаваемых вопросов...');
+            }
+
+            openVideoTutorials() {
+                this.showToast('🎥 Открытие видеоуроков...');
+            }
+
+            // ===== ML MODELS =====
+            retrainModels() {
+                this.showToast('🔄 Переобучение ML моделей... Это может занять несколько минут.', 'info');
+                setTimeout(() => {
+                    this.showToast('✅ ML модели успешно переобучены. Точность улучшена на 2.3%', 'success');
+                }, 4000);
+            }
+
+            // ===== UTILITIES =====
+            formatTime(date) {
+                return new Date(date).toLocaleTimeString('ru-RU', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            showToast(message, type = 'info') {
+                // Создаем временное уведомление
+                const toast = document.createElement('div');
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: ${type === 'success' ? '#059669' : type === 'warning' ? '#d97706' : type === 'error' ? '#dc2626' : '#2563eb'};
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 10000;
+                    max-width: 300px;
+                    word-wrap: break-word;
+                `;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
+            }
+
+            setupEventListeners() {
+                if ('Notification' in window) {
+                    Notification.requestPermission();
+                }
+            }
+
+            // ===== EXISTING FUNCTIONS =====
+            triggerEmergencyTest() {
+                if (confirm('Запустить тестовую тревогу? Это имитирует критическую ситуацию.')) {
+                    this.isEmergency = true;
+                    const smokeSensor = this.sensors.find(s => s.id === 'smoke');
+                    smokeSensor.value = 50;
+                    smokeSensor.status = 'critical';
+                    this.createAlert(smokeSensor, 'critical', 5);
+                    this.startEscalation(this.alerts[this.alerts.length - 1]);
+                    this.renderSensors();
+                    this.updateAlertPanel();
+                    this.showToast('🚨 Тестовая тревога активирована!', 'warning');
+                }
+            }
+
+            createAlert(sensor, level, severity) {
+                const alert = {
+                    id: Date.now(),
+                    sensor: sensor.name,
+                    level,
+                    severity,
+                    message: `Обнаружена аномалия: ${sensor.name} - ${Math.round(sensor.value)}${sensor.unit}`,
+                    timestamp: new Date(),
+                    acknowledged: false
+                };
+                this.alerts.push(alert);
+                if (level === 'critical') {
+                    this.startEscalation(alert);
+                }
+            }
+
+            startEscalation(alert) {
+                this.escalationLevel = 1;
+                this.updateEscalationTimeline();
+                setTimeout(() => {
+                    if (!alert.acknowledged) {
+                        this.escalationLevel = 2;
+                        this.updateEscalationTimeline();
+                    }
+                }, 30000);
+            }
+
+            updateEscalationTimeline() {
+                const items = document.querySelectorAll('.timeline-item');
+                items.forEach((item, index) => {
+                    if (index < this.escalationLevel) {
+                        item.style.background = '#dbeafe';
+                        item.querySelector('.timeline-dot').style.background = '#2563eb';
+                    } else {
+                        item.style.background = '#f8fafc';
+                        item.querySelector('.timeline-dot').style.background = '#6b7280';
+                    }
+                });
+            }
+
+            acknowledgeAllAlerts() {
+                this.alerts.forEach(alert => alert.acknowledged = true);
+                this.escalationLevel = 0;
+                this.updateEscalationTimeline();
+                this.updateAlertPanel();
+                this.isEmergency = false;
+                this.showToast('✅ Все оповещения сброшены', 'success');
+            }
+
+            forceUpdate() {
+                this.renderSensors();
+                this.updateAlertPanel();
+                this.showToast('✅ Данные датчиков обновлены!', 'success');
+            }
+
+            updateAlertPanel() {
+                const criticalAlerts = this.alerts.filter(a => a.level === 'critical' && !a.acknowledged);
+                const alertPanel = document.getElementById('currentAlert');
+                const alertLevel = document.getElementById('alertLevel');
+                const alertMessage = document.getElementById('alertMessage');
+
+                if (criticalAlerts.length > 0) {
+                    alertPanel.className = 'card alert-panel alert-critical';
+                    alertLevel.className = 'alert-level level-critical';
+                    alertLevel.textContent = 'КРИТИЧЕСКИЙ';
+                    alertMessage.textContent = criticalAlerts[0].message;
+                } else {
+                    alertPanel.className = 'card alert-panel alert-normal';
+                    alertLevel.className = 'alert-level level-normal';
+                    alertLevel.textContent = 'НОРМА';
+                    alertMessage.textContent = 'Все датчики в норме. Система работает стабильно.';
+                }
+            }
+
+            startMonitoring() {
+                setInterval(() => {
+                    this.simulateSensorData();
+                    this.detectAnomalies();
+                }, 5000);
+            }
+
+            simulateSensorData() {
+                this.sensors.forEach(sensor => {
+                    if (Math.random() > 0.7) {
+                        const change = (Math.random() - 0.5) * 5;
+                        sensor.value = Math.max(0, Math.round(sensor.value + change));
+                    }
+                });
+            }
+
+            detectAnomalies() {
+                this.sensors.forEach(sensor => {
+                    const [min, max] = sensor.normalRange;
+                    const value = sensor.value;
+                    if (value < min || value > max) {
+                        sensor.status = value > max + 5 ? 'critical' : 'warning';
+                        this.createAlert(sensor, sensor.status, 3);
+                    } else {
+                        sensor.status = 'normal';
+                    }
+                });
+                this.renderSensors();
+                this.updateAlertPanel();
+            }
+
+            clearNotifications() {
+                if (confirm('Очистить всю историю уведомлений?')) {
+                    this.notifications = [];
+                    this.renderNotifications();
+                    this.updateNotificationBadge();
+                    this.showToast('🗑️ История уведомлений очищена');
+                }
+            }
+        }
+
+        // ===== GLOBAL FUNCTIONS =====
+        function switchAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            
+            document.querySelector(`.auth-tab[data-tab="${tab}"]`).classList.add('active');
+            document.getElementById(`${tab}Form`).classList.add('active');
+        }
+
+        // ===== INITIALIZATION =====
+        const safeHome = new SafeHomeSystem();
+
+        // Service Worker для Push уведомлений
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(console.error);
+        }
+    </script>
+</body>
+</html>
